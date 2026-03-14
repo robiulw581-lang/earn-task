@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for both buyers and sellers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["buyer", "seller"] },
+        "balance": { "type": "number" },
+        "escrowBalance": { "type": "number" },
+        "level": { "type": "number" },
+        "exp": { "type": "number" },
+        "completedTasks": { "type": "number" },
+        "rejectedTasks": { "type": "number" },
+        "rating": { "type": "number" },
+        "referralCode": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "referralCount": { "type": "number" },
+        "activeReferrals": { "type": "number" },
+        "referralEarnings": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "balance"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A task created by a buyer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "reward": { "type": "number" },
+        "category": { "type": "string", "enum": ["app_install", "telegram", "website", "social"] },
+        "maxWorkers": { "type": "number" },
+        "currentWorkers": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "paused", "completed"] },
+        "isFeatured": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "title", "reward", "category", "maxWorkers", "status"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "A task submission by a worker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "taskId": { "type": "string" },
+        "workerId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "proofUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "autoApproveAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["taskId", "workerId", "buyerId", "status", "submittedAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "fee": { "type": "number" },
+        "type": { "type": "string", "enum": ["deposit", "withdrawal", "reward", "fee", "escrow_lock", "escrow_release"] },
+        "status": { "type": "string", "enum": ["pending", "completed", "failed"] },
+        "paymentMethod": { "type": "string" },
+        "paymentDetails": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "type", "status", "createdAt"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "Live activity feed items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{uid}": { "schema": "User", "description": "User profiles" },
+    "tasks/{taskId}": { "schema": "Task", "description": "Marketplace tasks" },
+    "submissions/{submissionId}": { "schema": "Submission", "description": "Task proofs" },
+    "transactions/{transactionId}": { "schema": "Transaction", "description": "Financial records" },
+    "activity/{activityId}": { "schema": "Activity", "description": "Live feed" }
+  }
+}

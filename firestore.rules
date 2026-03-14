@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Fields: uid, email, role, balance, level, exp, completedTasks, etc.
+    //
+    // Collection: tasks
+    // Fields: buyerId, title, reward, category, status, isFeatured, etc.
+    //
+    // Collection: submissions
+    // Fields: taskId, workerId, buyerId, proofUrl, status, autoApproveAt, etc.
+    //
+    // Collection: transactions
+    // Fields: userId, amount, fee, type, status, paymentMethod, paymentDetails, createdAt
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == "robiul39w@gmail.com");
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin() || 
+        (isAuthenticated() && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['referralCount', 'activeReferrals']) &&
+         request.resource.data.referralCount == (resource.data.get('referralCount', 0) + 1) &&
+         request.resource.data.activeReferrals == (resource.data.get('activeReferrals', 0) + 1));
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.buyerId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.buyerId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if isAuthenticated() && (resource.data.workerId == request.auth.uid || resource.data.buyerId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.workerId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.buyerId == request.auth.uid || resource.data.workerId == request.auth.uid || isAdmin());
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.type == 'withdrawal' &&
+        request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+    }
+
+    match /activity/{activityId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+    }
+  }
+}
